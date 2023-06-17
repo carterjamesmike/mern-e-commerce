@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 3001;
 //Apollo
 const { ApolloServer } = require('apollo-server-express');
 const { typeDefs, resolvers } = require('./schemas');
+const { type } = require('os');
 
 //Express Init
 app.use(express.urlencoded({ extended: false }));
@@ -24,3 +25,22 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/build')));
 }
 
+//Send every other request to the React app
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+});
+
+//Apollo Server 
+const startApolloServer = async (typeDefs, resolvers) => {
+    await server.start();
+    server.applyMiddleware({ app });
+
+    db.once('open', () => {
+        app.listen(PORT, () => {
+            console.log(`API server running on port ${PORT}!`);
+            console.log(`Use GraphQL at http://localhost:${PORT}${server.graphqlPath}`);
+        });
+    })
+}
+
+startApolloServer(typeDefs, resolvers);
